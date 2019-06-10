@@ -1,7 +1,8 @@
-rooms = [];
+const rooms = [];
 
 module.exports = (server) => {
     const io = require('socket.io')(server);
+    const wiki = require('wikijs');
     io.on('connection', function(socket) {
 
         socket.on('juego.iniciar', (data) => {
@@ -12,6 +13,23 @@ module.exports = (server) => {
             roomEnviarPrediccion(socket, io, data);
         });
 
+        socket.on('juego.famoso.buscar', (data) => {
+            wiki.default({ apiUrl: 'https://es.wikipedia.org/w/api.php' })
+                .page(data)
+                .then((page) => {
+                    return page.mainImage();
+                    //return page.info();
+                })
+                .then((pageInfo) => {
+                    console.log(pageInfo);
+                    socket.emit('juego.famoso.imagen', pageInfo);
+                })
+                .catch(error => {
+                    console.error(error);
+                    socket.emit('juego.famoso.imagen.error', 'No se ha encontrado el famoso');
+                });
+        });
+
         socket.on('disconnect', () => {
             roomDesconectar(socket, io);
         });
@@ -19,6 +37,9 @@ module.exports = (server) => {
 }
 
 function roomEntrar(socket, io, data) {
+
+    console.log('entrando')
+
     let roomVacio = false;
     let roomIndice = null;
     let roomCreador = null;

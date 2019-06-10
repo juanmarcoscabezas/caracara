@@ -1,22 +1,72 @@
-<div class="row text-center">
-    <div class="col-sm-12">
-        <h2>Bienvenido al juego</h2>
+<div id="juego" class="container">
+    <div class="row text-center" v-if="!usuario.activo">
         <div class="col-sm-12">
-            <input id="inputPrediccion" type="text" placeholder="Ingrese predicción">
-            <button id="btnPrediccion">Enviar</button>
+            <h2>Bienvenido al juego</h2>
+            <div class="col-sm-12">
+                <input v-model="personaje.busqueda" type="text" placeholder="Ingrese personaje">
+                <button v-on:click="buscarPersonajes()">Buscar personajes</button>
+            </div>
+            <div v-if="personaje.imagen !== null">
+                <img v-bind:src="personaje.imagen" style="width: 200px">
+            </div>
+        </div>
+    </div>
+    <div class="row text-center" v-if="usuario.activo">
+        <div class="col-sm-12">
+            <h2>Estás en partida</h2>
+            <div class="col-sm-12">
+                <input id="inputPrediccion" type="text" placeholder="Ingrese predicción">
+                <button id="btnPrediccion">Enviar</button>
+            </div>
         </div>
     </div>
 </div>
 
+
 <script>
+
     const socket = io();
+
+    const juego = new Vue({
+        el: '#juego',
+        data: {
+            usuario: {
+                id: null,
+                username: null,
+                room: null,
+                activo: false,
+                turno: false,
+            },
+            personaje: {
+                busqueda: '',
+                imagen: null
+            }
+        },
+        created: function() {
+            socket.on('juego.famoso.imagen', (data) => {
+                this.personaje.imagen = data;
+            });
+
+            socket.on('juego.famoso.imagen.error', (data) => {
+                console.log(data);
+                alert(data);
+            });
+        },
+        methods: {
+            buscarPersonajes: function() {
+                socket.emit('juego.famoso.buscar', this.personaje.busqueda);
+            }
+        }
+    });
+
+    
     socket.emit('juego.iniciar', true);
 
     usuario = {
         id: null,
         username: null,
         room: null,
-        activo: true,
+        activo: false,
         turno: false,
     }
 
@@ -39,8 +89,9 @@
     socket.on('juego.room.creado', (data) => {
         usuario.room = data.room;
         usuario.turno = data.turno;
-        console.log(data);
-    })
+    });
+
+    
 
     // FUNCIONES
     function enviarPrediccion() {
