@@ -1,0 +1,57 @@
+<div class="row text-center">
+    <div class="col-sm-12">
+        <h2>Bienvenido al juego</h2>
+        <div class="col-sm-12">
+            <input id="inputPrediccion" type="text" placeholder="Ingrese predicción">
+            <button id="btnPrediccion">Enviar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const socket = io();
+    socket.emit('juego.iniciar', true);
+
+    usuario = {
+        id: null,
+        username: null,
+        room: null,
+        activo: true,
+        turno: false,
+    }
+
+    // EMISIONES
+    $('#btnPrediccion').click(function() {
+        enviarPrediccion();
+    });
+
+    $('#inputPrediccion').keydown(function(event) { 
+        if(event.keyCode === 13) {
+            enviarPrediccion();
+        }
+    });
+
+    // RECEPCIONES
+    socket.on('juego.recibir.prediccion', (data) => {
+        console.log(data);
+    });
+
+    socket.on('juego.room.creado', (data) => {
+        usuario.room = data.room;
+        usuario.turno = data.turno;
+        console.log(data);
+    })
+
+    // FUNCIONES
+    function enviarPrediccion() {
+        const prediccion = $('#inputPrediccion').val();
+        if(prediccion.trim() !== '') {
+            socket.emit('juego.enviar.prediccion', {
+                room: usuario.room,
+                prediccion
+                });
+            $('#inputPrediccion').val('');
+        }
+    }
+
+</script>

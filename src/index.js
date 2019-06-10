@@ -1,6 +1,6 @@
-const app = require('express')();
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
+const express = require('express');
+const app = express();
+const server = require('http').Server(app);
 const hbs = require('express-handlebars');
 const path = require('path');
 
@@ -24,18 +24,18 @@ app.get('/login', function(req, res) {
     res.render('login');
 });
 
-app.get('/caracara', (req, res) => {
-    res.render('caracara', {
+app.get('/juego', (req, res) => {
+    res.render('juego', {
 
     })
 });
 
-io.on('connection', function(socket) {
-    console.log('Se ha conectado alguien');
-});
+// ARCHIVOS ESTÁTICOS
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
-module.exports.server = http;
+// SOCKETS
+require('./socket')(server);
 
-http.listen(3000, function() {
+server.listen(3000, function() {
     console.log('Escuchando en el puerto 3000');
 });
