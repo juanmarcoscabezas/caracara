@@ -36,6 +36,6 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 // SOCKETS
 require('./socket')(server);
 
-server.listen(3000, function() {
+server.listen(3001, function() {
     console.log('Escuchando en el puerto 3001');
 });
