@@ -7,7 +7,7 @@
                 <button v-on:click="buscarPersonajes()">Buscar personajes</button>
             </div>
             <div v-if="personaje.imagen !== null">
-                <img v-bind:src="personaje.imagen" style="width: 200px">
+                <img v-bind:src="personaje.imagen" style="width: 200px; height: 250px">
             </div>
             <div v-if="personaje.imagen !== null">
                 <button v-on:click="seleccionarPersonaje()"> Seleccionar</button>
@@ -17,7 +17,7 @@
     <div class="row text-center" v-if="usuario.room">
         <div class="col-sm-12">
             <h1>Estás en partida</h1>
-            <img v-bind:src="personaje.imagen" style="width: 200px">
+            <img v-bind:src="personaje.imagen" style="width: 200px; height: 250px">
             <div class="col-sm-12">
                 <input v-model="personaje.prediccion" v-bind:disabled="!usuario.turno  || !usuario.partida" type="text" placeholder="Ingrese predicción">
                 <button v-on:click="enviarPrediccion()">Enviar</button>
@@ -102,17 +102,28 @@
                     this.usuario.activo = false,
                     this.usuario.turno = false,
                     this.usuario.partida = false,
-                    this.usuario.busqueda = '',
-                    this.usuario.imagen = null,
-                    this.usuario.prediccion = ''
-                    this.usuario.preguntas = []
+                    this.personaje.busqueda = '',
+                    this.personaje.imagen = null,
+                    this.personaje.prediccion = ''
+                    this.preguntas = []
                 }
             });
 
         },
         methods: {
             buscarPersonajes: function() {
-                socket.emit('juego.famoso.buscar', this.personaje.busqueda);
+                const expReg = (/^([a-zA-Z]+\s)*[a-zA-Z]+$/);
+                const busquedaValida = expReg.test(this.personaje.busqueda);
+                if(busquedaValida) {
+                    const arrayBusqueda = this.personaje.busqueda.toLowerCase().split(' ');
+                    let busquedaRefactorizada = ''
+                    for(busqueda of arrayBusqueda) {
+                        busquedaRefactorizada += busqueda.charAt(0).toUpperCase() + busqueda.slice(1) + ' ';
+                    }
+                    socket.emit('juego.famoso.buscar', busquedaRefactorizada.trim());
+                } else {
+                    alert('Ingresa un personaje válido');
+                }
             },
             enviarPrediccion: function() {
                 if(this.personaje.prediccion.trim() !== '') {
