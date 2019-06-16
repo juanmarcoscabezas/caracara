@@ -113,9 +113,9 @@
         methods: {
             buscarPersonajes: function() {
                 const expReg = (/^([a-zA-Z]+\s)*[a-zA-Z]+$/);
-                const busquedaValida = expReg.test(this.personaje.busqueda);
+                const busquedaValida = expReg.test(this.personaje.busqueda.trim());
                 if(busquedaValida) {
-                    const arrayBusqueda = this.personaje.busqueda.toLowerCase().split(' ');
+                    const arrayBusqueda = this.personaje.busqueda.trim().toLowerCase().split(' ');
                     let busquedaRefactorizada = ''
                     for(busqueda of arrayBusqueda) {
                         busquedaRefactorizada += busqueda.charAt(0).toUpperCase() + busqueda.slice(1) + ' ';
