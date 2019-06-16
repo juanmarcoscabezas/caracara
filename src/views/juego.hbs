@@ -1,7 +1,7 @@
 <div id="juego" class="container">
     <div class="row text-center" v-if="!usuario.activo">
         <div class="col-sm-12">
-            <h2>Bienvenido al juego</h2>
+            <h1>Bienvenido al juego</h1>
             <div class="col-sm-12">
                 <input v-model="personaje.busqueda" type="text" placeholder="Ingrese personaje">
                 <button v-on:click="buscarPersonajes()">Buscar personajes</button>
@@ -9,25 +9,34 @@
             <div v-if="personaje.imagen !== null">
                 <img v-bind:src="personaje.imagen" style="width: 200px">
             </div>
+            <div v-if="personaje.imagen !== null">
+                <button v-on:click="seleccionarPersonaje()"> Seleccionar</button>
+            </div>
         </div>
     </div>
-    <div class="row text-center" v-if="usuario.activo">
+    <div class="row text-center" v-if="usuario.room">
         <div class="col-sm-12">
-            <h2>Estás en partida</h2>
+            <h1>Estás en partida</h1>
+            <img v-bind:src="personaje.imagen" style="width: 200px">
             <div class="col-sm-12">
-                <input id="inputPrediccion" type="text" placeholder="Ingrese predicción">
-                <button id="btnPrediccion">Enviar</button>
+                <input v-model="personaje.prediccion" v-bind:disabled="!usuario.turno  || !usuario.partida" type="text" placeholder="Ingrese predicción">
+                <button v-on:click="enviarPrediccion()">Enviar</button>
+            </div>
+            <h4 v-if="!usuario.partida">Buscando rival</h4>
+        </div>
+        <div class="col-sm-12 text-left">
+            <h2>Mis preguntas</h2>
+            <div v-for="(pregunta, index) in preguntas">
+                <h3> ${index + 1} - ${pregunta.pregunta} </h3>
+                <h4> ${pregunta.respuesta} </h4>
             </div>
         </div>
     </div>
 </div>
-
-
 <script>
-
     const socket = io();
-
     const juego = new Vue({
+        delimiters: ['${', '}'],
         el: '#juego',
         data: {
             usuario: {
@@ -36,11 +45,14 @@
                 room: null,
                 activo: false,
                 turno: false,
+                partida: false,
             },
             personaje: {
                 busqueda: '',
-                imagen: null
-            }
+                imagen: null,
+                prediccion: ''
+            },
+            preguntas: []
         },
         created: function() {
             socket.on('juego.famoso.imagen', (data) => {
@@ -51,58 +63,71 @@
                 console.log(data);
                 alert(data);
             });
+
+            socket.on('juego.recibir.prediccion', (data) => {
+                const res = confirm(data.prediccion);
+                let respuesta = '';
+                if(res) {
+                    respuesta = 'Si'
+                } else {
+                    respuesta = 'No'
+                }
+                socket.emit('juego.enviar.prediccion.respuesta', {
+                    room: this.usuario.room,
+                    respuesta: respuesta
+                });
+                this.usuario.turno = data.turno;
+            });
+
+            socket.on('juego.recibir.prediccion.respuesta', (data) => {
+               this.preguntas[this.preguntas.length - 1].respuesta = data.respuesta;  
+            });
+
+            socket.on('juego.room.creado', (data) => {
+                this.usuario.room = data.room;
+                this.usuario.turno = data.turno;
+                this.usuario.activo = data.activo;
+            });
+
+            socket.on('juego.partida.inicia', (data) => {
+                this.usuario.partida = data;
+            });
+
+            socket.on('juego.fin.rival.desconectado', (data) => {
+                if(data) {
+                    alert('Tu rival se ha desconectado');
+                    this.usuario.id = null,
+                    this.usuario.username = null,
+                    this.usuario.room = null,
+                    this.usuario.activo = false,
+                    this.usuario.turno = false,
+                    this.usuario.partida = false,
+                    this.usuario.busqueda = '',
+                    this.usuario.imagen = null,
+                    this.usuario.prediccion = ''
+                    this.usuario.preguntas = []
+                }
+            });
+
         },
         methods: {
             buscarPersonajes: function() {
                 socket.emit('juego.famoso.buscar', this.personaje.busqueda);
+            },
+            enviarPrediccion: function() {
+                if(this.personaje.prediccion.trim() !== '') {
+                    socket.emit('juego.enviar.prediccion', {
+                        room: this.usuario.room,
+                        prediccion: this.personaje.prediccion
+                    });
+                    this.preguntas.push({pregunta: this.personaje.prediccion, respuesta: ''});
+                    this.personaje.prediccion = '';
+                    this.usuario.turno = false;
+                }
+            },
+            seleccionarPersonaje: function() {
+                socket.emit('juego.iniciar', true);
             }
         }
     });
-
-    
-    socket.emit('juego.iniciar', true);
-
-    usuario = {
-        id: null,
-        username: null,
-        room: null,
-        activo: false,
-        turno: false,
-    }
-
-    // EMISIONES
-    $('#btnPrediccion').click(function() {
-        enviarPrediccion();
-    });
-
-    $('#inputPrediccion').keydown(function(event) { 
-        if(event.keyCode === 13) {
-            enviarPrediccion();
-        }
-    });
-
-    // RECEPCIONES
-    socket.on('juego.recibir.prediccion', (data) => {
-        console.log(data);
-    });
-
-    socket.on('juego.room.creado', (data) => {
-        usuario.room = data.room;
-        usuario.turno = data.turno;
-    });
-
-    
-
-    // FUNCIONES
-    function enviarPrediccion() {
-        const prediccion = $('#inputPrediccion').val();
-        if(prediccion.trim() !== '') {
-            socket.emit('juego.enviar.prediccion', {
-                room: usuario.room,
-                prediccion
-                });
-            $('#inputPrediccion').val('');
-        }
-    }
-
 </script>

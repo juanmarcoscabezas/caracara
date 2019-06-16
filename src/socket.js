@@ -30,6 +30,10 @@ module.exports = (server) => {
                 });
         });
 
+        socket.on('juego.enviar.prediccion.respuesta', (data) => {
+            roomEnviarPrediccionRespuesta(socket, io, data);
+        });
+
         socket.on('disconnect', () => {
             roomDesconectar(socket, io);
         });
@@ -37,9 +41,6 @@ module.exports = (server) => {
 }
 
 function roomEntrar(socket, io, data) {
-
-    console.log('entrando')
-
     let roomVacio = false;
     let roomIndice = null;
     let roomCreador = null;
@@ -57,12 +58,16 @@ function roomEntrar(socket, io, data) {
         socket.join(rooms[roomIndice].creador);
         socket.emit('juego.room.creado', {
             room: roomCreador,
-            turno: false
+            turno: false,
+            activo: true
         });
+        io.to(roomCreador).emit('juego.partida.inicia', true);
+        rooms[roomIndice].invitado = socket.id;
     } else {
         socket.emit('juego.room.creado', {
             room: socket.id,
-            turno: true
+            turno: true,
+            activo: true
         });
         rooms.push({ creador: socket.id });
     }
@@ -71,14 +76,27 @@ function roomEntrar(socket, io, data) {
 function roomEnviarPrediccion(socket, io, data) {
     console.log(data);
     if (io.sockets.adapter.rooms[data.room]) {
-        io.to(data.room).emit('juego.recibir.prediccion', data.prediccion);
+        socket.to(data.room).emit('juego.recibir.prediccion', {
+            prediccion: data.prediccion,
+            turno: true,
+        });
     }
 }
 
-function roomDesconectar(socket, io) {
+function roomEnviarPrediccionRespuesta(socket, io, data) {
+    if (io.sockets.adapter.rooms[data.room]) {
+        socket.to(data.room).emit('juego.recibir.prediccion.respuesta', {
+            respuesta: data.respuesta
+        });
+    }
+}
+
+function roomDesconectar(socket, io, data) {
     for (let i = 0; i < rooms.length; i++) {
-        if (rooms[i].creador === socket.id) {
+        if (rooms[i].creador === socket.id || rooms[i].invitado === socket.id) {
+            socket.to(rooms[i].creador).emit('juego.fin.rival.desconectado', true);
             rooms.splice(i, 1);
+            break;
         }
     }
 }
