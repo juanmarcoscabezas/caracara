@@ -37,5 +37,5 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 require('./socket')(server);
 
 server.listen(3000, function() {
-    console.log('Escuchando en el puerto 3000');
+    console.log('Escuchando en el puerto 3001');
 });
