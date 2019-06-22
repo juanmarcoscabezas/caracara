@@ -1,35 +1,58 @@
-<div id="juego" class="container">
-    <div class="row text-center" v-if="!usuario.activo">
+<div id="juego" class="container" style="margin-top: 40px">
+    <div class="row text-center" v-if="!usuario.activo && !desconectado">
         <div class="col-sm-12">
-            <h1>Bienvenido al juego</h1>
-            <div class="col-sm-12">
-                <input v-model="personaje.busqueda" type="text" placeholder="Ingrese personaje">
-                <button v-on:click="buscarPersonajes()">Buscar personajes</button>
+            <div class="col-sm-6 mx-auto">
+                <div class="input-group">
+                    <input class="form-control" v-model="personaje.busqueda" type="text" placeholder="Ingrese su personaje">
+                    <div class="input-group-prepend">
+                       <button class="btn btn-primary" v-on:click="buscarPersonajes()">Buscar</button>
+                    </div>
+                </div>
             </div>
-            <div v-if="personaje.imagen !== null">
+            <div v-if="personaje.imagen !== null" style="margin-top: 10px">
                 <img v-bind:src="personaje.imagen" style="width: 200px; height: 250px">
             </div>
-            <div v-if="personaje.imagen !== null">
-                <button v-on:click="seleccionarPersonaje()"> Seleccionar</button>
+            <div v-if="personaje.imagen !== null" style="margin-top: 10px">
+                <button class="btn btn-primary" v-on:click="seleccionarPersonaje()"> Listo</button>
             </div>
         </div>
     </div>
     <div class="row text-center" v-if="usuario.room">
         <div class="col-sm-12">
-            <h1>Estás en partida</h1>
             <img v-bind:src="personaje.imagen" style="width: 200px; height: 250px">
-            <div class="col-sm-12">
-                <input v-model="personaje.prediccion" v-bind:disabled="!usuario.turno  || !usuario.partida" type="text" placeholder="Ingrese predicción">
-                <button v-on:click="enviarPrediccion()">Enviar</button>
+            <div class="col-sm-6 mx-auto" style="margin-top: 10px">
+                <div class="input-group" v-if="usuario.partida">
+                    <input class="form-control" v-model="personaje.prediccion" v-bind:disabled="!usuario.turno  || !usuario.partida" type="text" placeholder="Ingrese predicción">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-primary" v-on:click="enviarPrediccion()">Enviar</button>
+                    </div>
+                </div>
+                <button v-if="!usuario.partida" class="btn btn-primary" disabled style="margin-top: 10px">
+                    <span class="spinner-grow spinner-grow-sm"></span>
+                    Esperando rival
+                </button>
             </div>
-            <h4 v-if="!usuario.partida">Buscando rival</h4>
         </div>
-        <div class="col-sm-12 text-left">
-            <h2>Mis preguntas</h2>
-            <div v-for="(pregunta, index) in preguntas">
-                <h3> ${index + 1} - ${pregunta.pregunta} </h3>
-                <h4> ${pregunta.respuesta} </h4>
+        <div class="col-sm-12 alert alert-success text-center" id="myAlert" style="display: none; margin-top: 20px">
+            <strong>${alertText}</strong>
+            <div>
+                <button v-on:click="enviarRespuesta('si')" class="btn btn-success" style="width: 100px">Si</button>
+                <button v-on:click="enviarRespuesta('tal vez')" class="btn btn-warning" style="width: 100px">Tal vez</button>
+                <button v-on:click="enviarRespuesta('no')" class="btn btn-danger" style="width: 100px">No</button>
             </div>
+        </div>
+        <div class="col-sm-12 text-center" v-if="usuario.partida" style="margin-top: 20px">
+            <h5>Mis preguntas</h5>
+            <div v-for="(pregunta, index) in preguntas">
+                <h6> ${index + 1} - ${pregunta.pregunta} </h6>
+                <p> ${pregunta.respuesta} </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-12 alert alert-danger text-center" id="myAlertDanger" style="display: none; ">
+        <strong>Tu rival se ha desconectado</strong>
+        <div>
+            <a href="http://localhost:3001" class="btn btn-success" style="width: 100px">Aceptar</a>
         </div>
     </div>
 </div>
@@ -52,31 +75,23 @@
                 imagen: null,
                 prediccion: ''
             },
-            preguntas: []
+            preguntas: [],
+            alertText: 'Texto inicial',
+            desconectado: false
         },
         created: function() {
+
             socket.on('juego.famoso.imagen', (data) => {
                 this.personaje.imagen = data;
             });
 
             socket.on('juego.famoso.imagen.error', (data) => {
-                console.log(data);
-                alert(data);
+
             });
 
             socket.on('juego.recibir.prediccion', (data) => {
-                const res = confirm(data.prediccion);
-                let respuesta = '';
-                if(res) {
-                    respuesta = 'Si'
-                } else {
-                    respuesta = 'No'
-                }
-                socket.emit('juego.enviar.prediccion.respuesta', {
-                    room: this.usuario.room,
-                    respuesta: respuesta
-                });
-                this.usuario.turno = data.turno;
+                $("#myAlert").css("display", "block");
+                this.alertText = data.prediccion;
             });
 
             socket.on('juego.recibir.prediccion.respuesta', (data) => {
@@ -95,7 +110,8 @@
 
             socket.on('juego.fin.rival.desconectado', (data) => {
                 if(data) {
-                    alert('Tu rival se ha desconectado');
+                    $("#myAlertDanger").css("display", "block");
+                    this.desconectado = true;
                     this.usuario.id = null,
                     this.usuario.username = null,
                     this.usuario.room = null,
@@ -108,7 +124,6 @@
                     this.preguntas = []
                 }
             });
-
         },
         methods: {
             buscarPersonajes: function() {
@@ -122,7 +137,8 @@
                     }
                     socket.emit('juego.famoso.buscar', busquedaRefactorizada.trim());
                 } else {
-                    alert('Ingresa un personaje válido');
+                    this.alertText = 'Ingresa un personaje válido';
+                    $("#myAlert").alert();
                 }
             },
             enviarPrediccion: function() {
@@ -138,6 +154,18 @@
             },
             seleccionarPersonaje: function() {
                 socket.emit('juego.iniciar', true);
+            },
+            closeAlert: function(){
+                $("#myAlert").alert("close");
+                this.alertText = '';
+            },
+            enviarRespuesta: function(respuesta){
+                socket.emit('juego.enviar.prediccion.respuesta', {
+                    room: this.usuario.room,
+                    respuesta: respuesta
+                });
+                this.usuario.turno = true;
+                $("#myAlert").css("display", "none");
             }
         }
     });

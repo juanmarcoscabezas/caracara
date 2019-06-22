@@ -20,15 +20,14 @@ app.get('/', function(req, res) {
     res.render('index');
 });
 
-app.get('/login', function(req, res) {
-    res.render('login');
+app.post('/jugar', function(req, res) {
+    res.render('juego');
 });
 
-app.get('/juego', (req, res) => {
-    res.render('juego', {
-
-    })
+app.get('/registro', (req, res) => {
+    res.render('index');
 });
+
 
 // ARCHIVOS ESTÁTICOS
 app.use('/public', express.static(path.join(__dirname, 'public')));
