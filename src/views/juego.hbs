@@ -19,7 +19,19 @@
     </div>
     <div class="row text-center" v-if="usuario.room">
         <div class="col-sm-12">
-            <img v-bind:src="personaje.imagen" style="width: 200px; height: 250px">
+            <div class="row">
+                <div class="col-sm-6 text-right">
+                    <div class="text-right" style="width: 200px; margin: auto">
+                        <h5 >Mi rival</h5>
+                    </div>
+                    <img id="imagenRival" v-if="rival.imagen !== null" v-bind:src="rival.imagen" style="width: 200px; height: 250px">
+                    <img v-if="rival.imagen === null" style="width: 200px; height: 250px; background: black">
+                </div>
+                <div class="col-sm-6 text-left">
+                    <h5 style="width: 200px; text-align: center">Mi personaje</h5>
+                    <img v-bind:src="personaje.imagen" style="width: 200px; height: 250px">
+                </div>
+            </div>
             <div class="col-sm-6 mx-auto" style="margin-top: 10px">
                 <div class="input-group" v-if="usuario.partida">
                     <input class="form-control" v-model="personaje.prediccion" v-bind:disabled="!usuario.turno  || !usuario.partida" type="text" placeholder="Ingrese predicción">
@@ -52,7 +64,7 @@
     <div class="col-sm-12 alert alert-danger text-center" id="myAlertDanger" style="display: none; ">
         <strong>Tu rival se ha desconectado</strong>
         <div>
-            <a href="http://localhost:3001" class="btn btn-success" style="width: 100px">Aceptar</a>
+            <a href="/" class="btn btn-success" style="width: 100px">Aceptar</a>
         </div>
     </div>
 </div>
@@ -77,9 +89,15 @@
             },
             preguntas: [],
             alertText: 'Texto inicial',
-            desconectado: false
+            desconectado: false,
+            rival: {
+                imagen: null,
+                porcentaje: 0
+            }
         },
         created: function() {
+
+            $("#imagenRival").css("filter", `brightness(0.0)`);
 
             socket.on('juego.famoso.imagen', (data) => {
                 this.personaje.imagen = data;
@@ -95,13 +113,22 @@
             });
 
             socket.on('juego.recibir.prediccion.respuesta', (data) => {
+                if(data.respuesta === 'si') {
+                    this.rival.porcentaje += 0.01;
+                    $("#imagenRival").css("filter", `brightness(${this.rival.porcentaje})`);
+                }
                this.preguntas[this.preguntas.length - 1].respuesta = data.respuesta;  
+               this.rival.imagen = data.imagen;
             });
 
             socket.on('juego.room.creado', (data) => {
                 this.usuario.room = data.room;
                 this.usuario.turno = data.turno;
                 this.usuario.activo = data.activo;
+            });
+
+            socket.on('juego.enviar.imagen', (data) => {
+                console.log(data);
             });
 
             socket.on('juego.partida.inicia', (data) => {
@@ -112,16 +139,16 @@
                 if(data) {
                     $("#myAlertDanger").css("display", "block");
                     this.desconectado = true;
-                    this.usuario.id = null,
-                    this.usuario.username = null,
-                    this.usuario.room = null,
-                    this.usuario.activo = false,
-                    this.usuario.turno = false,
-                    this.usuario.partida = false,
-                    this.personaje.busqueda = '',
-                    this.personaje.imagen = null,
-                    this.personaje.prediccion = ''
-                    this.preguntas = []
+                    this.usuario.id = null;
+                    this.usuario.username = null;
+                    this.usuario.room = null;
+                    this.usuario.activo = false;
+                    this.usuario.turno = false;
+                    this.usuario.partida = false;
+                    this.personaje.busqueda = '';
+                    this.personaje.imagen = null
+                    this.personaje.prediccion = '';
+                    this.preguntas = [];
                 }
             });
         },
@@ -153,7 +180,9 @@
                 }
             },
             seleccionarPersonaje: function() {
-                socket.emit('juego.iniciar', true);
+                socket.emit('juego.iniciar', {
+                    imagen: this.personaje.imagen
+                });
             },
             closeAlert: function(){
                 $("#myAlert").alert("close");
@@ -162,7 +191,8 @@
             enviarRespuesta: function(respuesta){
                 socket.emit('juego.enviar.prediccion.respuesta', {
                     room: this.usuario.room,
-                    respuesta: respuesta
+                    respuesta: respuesta,
+                    imagen: this.personaje.imagen
                 });
                 this.usuario.turno = true;
                 $("#myAlert").css("display", "none");

@@ -1,4 +1,22 @@
 const rooms = [];
+class Jugador {
+
+    constructor(socketId) {
+        this.socketId = socketId;
+    }
+
+    setNick(nick) {
+        this.nick = nick;
+    }
+
+    setImagen(imagen) {
+        this.imagen = imagen;
+    }
+
+    getNick() {
+        return this.nick;
+    }
+}
 
 module.exports = (server) => {
     const io = require('socket.io')(server);
@@ -21,7 +39,7 @@ module.exports = (server) => {
                     //return page.info();
                 })
                 .then((pageInfo) => {
-                    console.log(pageInfo);
+                    // console.log(pageInfo);
                     socket.emit('juego.famoso.imagen', pageInfo);
                 })
                 .catch(error => {
@@ -32,6 +50,10 @@ module.exports = (server) => {
 
         socket.on('juego.enviar.prediccion.respuesta', (data) => {
             roomEnviarPrediccionRespuesta(socket, io, data);
+        });
+
+        socket.on('juego.enviar.imagen', (data) => {
+
         });
 
         socket.on('disconnect', () => {
@@ -59,22 +81,26 @@ function roomEntrar(socket, io, data) {
         socket.emit('juego.room.creado', {
             room: roomCreador,
             turno: false,
-            activo: true
+            activo: true,
+            imagen: data.imagen
         });
+
         io.to(roomCreador).emit('juego.partida.inicia', true);
+
         rooms[roomIndice].invitado = socket.id;
     } else {
         socket.emit('juego.room.creado', {
             room: socket.id,
             turno: true,
-            activo: true
+            activo: true,
+            imagen: data.imagen
         });
         rooms.push({ creador: socket.id });
     }
 }
 
 function roomEnviarPrediccion(socket, io, data) {
-    console.log(data);
+    // console.log(data);
     if (io.sockets.adapter.rooms[data.room]) {
         socket.to(data.room).emit('juego.recibir.prediccion', {
             prediccion: data.prediccion,
@@ -86,7 +112,8 @@ function roomEnviarPrediccion(socket, io, data) {
 function roomEnviarPrediccionRespuesta(socket, io, data) {
     if (io.sockets.adapter.rooms[data.room]) {
         socket.to(data.room).emit('juego.recibir.prediccion.respuesta', {
-            respuesta: data.respuesta
+            respuesta: data.respuesta,
+            imagen: data.imagen
         });
     }
 }
