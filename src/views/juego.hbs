@@ -20,15 +20,17 @@
     <div class="row text-center" v-if="usuario.room">
         <div class="col-sm-12">
             <div class="row">
-                <div class="col-sm-6 text-right">
-                    <div class="text-right" style="width: 200px; margin: auto">
+                <div class="col-sm-6">
+                    <div style="width: 200px; margin: auto">
                         <h5 >Mi rival</h5>
                     </div>
                     <img id="imagenRival" v-if="rival.imagen !== null" v-bind:src="rival.imagen" style="width: 200px; height: 250px">
                     <img v-if="rival.imagen === null" style="width: 200px; height: 250px; background: black">
                 </div>
-                <div class="col-sm-6 text-left">
-                    <h5 style="width: 200px; text-align: center">Mi personaje</h5>
+                <div class="col-sm-6">
+                    <div style="width: 200px; margin: auto">
+                        <h5 >Mi personaje</h5>
+                    </div>
                     <img v-bind:src="personaje.imagen" style="width: 200px; height: 250px">
                 </div>
             </div>
