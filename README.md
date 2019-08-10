@@ -3,7 +3,7 @@
 
 ### Desarrollado con Node.js (express), vue.js
 
-Para jugar, debes hacer click [AQUÍ](http://18.216.138.17:3001/)
+## Para jugar, debes hacer click [AQUÍ](http://18.216.138.17:3001/)
 
 El juego está disponible en la siguiente ip: http://18.216.138.17:3001/
 
