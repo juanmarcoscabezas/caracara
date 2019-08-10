@@ -4,3 +4,8 @@
 Para jugar, debes hacer click [AQUÍ](http://18.216.138.17:3001/)
 
 El juego está disponible en la siguiente ip: http://18.216.138.17:3001/
+
+### "npm run dev" para iniciar el servidor de desarrollo.
+### "localhost:3001" para acceder al juego.
+
+![imagen caracara](https://raw.githubusercontent.com/juanmarcoscabezas/caracara/master/caracara.png)
